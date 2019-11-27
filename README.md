@@ -156,6 +156,10 @@ To test you can visit your ec2 in a browser with your chosen endpoint.
 
         http://ec2<hyphen-seperated-IPv4>.<ec2-region>.compute.amazonaws.com/<new endpoint>/
 
+Example:
+
+        http://ec2-169.254.169.254.us-west-2.compute.amazonaws.com/newpoint/
+
 Here we have a functioning app in a live environment to test and experiment with! 
 <strong>Delete any endpoints when you stop a container, or if a container crashes </strong>
 
