@@ -171,9 +171,29 @@ to show current endpoints.
 
 
 <h4 style="text-decoration: underline;">Edgecase - troubleshoot</h4>
-When you add an endpoint, dend creates a file in the dauto_endpoint folder. It uses these to recognize current endpoints. If you delete one on accident, you will have to manually disable the endpoint and add it again.
+When you add an endpoint, dend creates a file in the dauto_endpoint folder. It uses these to recognize current endpoints. If you delete one on accident, you can either make the file yourself, or manually disable the endpoint and add it again.
 
-Log into you
+To disable the endpoint, log into your apache container:
+
+        docker exec -ti <apacher-container-name> bash
+
+You'll drop into a tty. Look for your endpoint-config file:
+
+        ls -al /etc/apache2/sites-available
+
+and disable it:
+
+        a2dissite <endpoint-name>
+
+then reload the apache service:
+
+        service apache2 reload
+
+now it is safe to remove the config file:
+
+        rm /etc/apache2/sites-available/<endpoint-name>.conf
+
+then simply exit out of the container and add it again.
 
 
 If a container stops and another starts before the first one is started again, they may switch IPs which would mean the created endpoint would lead to the second container.
