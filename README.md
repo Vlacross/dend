@@ -22,7 +22,7 @@ For the Mongo Database, Docker made it simple with their ready-to-go mongo image
 
         docker pull mongo
 
-<a href="src: https://github.com/dockerfile/mongodb/issues/32">src</a>
+<a href="https://github.com/dockerfile/mongodb/issues/32">src</a>
 
 And their docs for creating a <a href="https://docs.docker.com/v17.09/engine/userguide/networking/#user-defined-networks">user-defined-network</a> and <a href="https://docs.docker.com/network/network-tutorial-standalone/">configuring it</a> made things move smoothly when it came to connecting containers.
 
