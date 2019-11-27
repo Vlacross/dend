@@ -51,7 +51,7 @@ Running this inside the app folder we pulled from github should work:
         sed -i "3, 4c const MONGODB_URI = process.env.NODE_ENV === \'development\' ? \'mongodb://mongo/RSVP\' : process.env.MONGODB_URI; \nconst MONGODB_URI_TEST = process.env.NODE_ENV === \'development\' ? \'mongodb://mongo/RSVP-test\' : process.env.MONGODB_URI_TEST;" config.js
 
 
-and if for whatever reason it doesnt, we simply need to replace the lines in the config file that are directing our uri variable to localhost(third and fourth lines), with the following:
+and if for whatever reason it doesn't, we simply need to replace the lines in the config file that are directing our uri variable to localhost(third and fourth lines), with the following:
 
         const MONGODB_URI = process.env.NODE_ENV === 'development' ? 'mongodb://mongo/RSVP' : process.env.MONGODB_URI;
 
@@ -95,10 +95,72 @@ which should drop us into a tty shell, where we can run:
 
 We should see RSVP amidst some other built in databases (admin, config, local)
 
-If not, double check database uri.
+If not, double check the database uri and ports to make sure everything is configured properly.
 
-At this point, we should have an app running in a user-defined network.
+At this point, we should have an app running and interacting with a database in a user-defined network. We are now ready to add a Virtual Host to our Apache server to forward traffic to to our containerized app.
 
+Make a folder named <strong>dauto_endpoint</strong> in your ec2 home directory and pull this repo:
+
+        mkdir dauto_endpoint && cd dauto_endpoint && \
+        git pull https://github.com/Vlacross/dend.git
+
+then run:
+
+      chmod +x dend
+
+which should make the script executable.
+
+Test this with:
+
+        ./dend --help
+
+you should see a help message.
+
+You can add this directory to your ec2 PATH via:
+
+        sed -i "$(cat .bashrc | wc -l)a \export PATH="/home/\$USER/dauto_endpoint:$PATH"" .bashrc
+
+then source your rc file:
+
+        source /home/$USER/.bashrc
+
+test this with:
+
+        dend -h
+
+If you see the help message again, everything worked as expected.
+
+Now since we have our app running, if you used the commands given in these instructions, it should be named <strong>nodock</strong>(if you used a different name in this guide, use it in place of <strong>nodock</strong>).
+
+Since are going to be forwarding traffic between containers, we need to move our apache container to our new network:
+
+        docker stop <apache-container-name-or-id>
+        
+        docker run --rm -ti -d --net=mdb_hub -p 80:80 --name <apache-image> <apache-container-name>
+
+
+To add an endpoint to your ec2 site enter:
+
+        dend -a
+
+which will prompt you to enter a name for your new endpoint. For example purposed, lets say we enter <strong>newpoint</strong> 
+
+Then it will ask you to enter the name of the container you want to host (in my case, I entered nodock).
+
+Supposing the network configuration worked as planned, you should see the terminal spit out the IP and Port of the container and show that apache enabled the endpoint and reloaded.
+
+To test you can visit your ec2 in a browser with your chosen endpoint.
+
+<strong>Make sure to add a forward slash after the endpoint, as Apache VirtualHosts can be finicky about address syntax.</strong>
+
+
+        http://ec2<hyphen-seperated-IPv4>.<ec2-region>.compute.amazonaws.com/<new endpoint>/
+
+Here we have a functioning app in a live environment to test and experiment with! 
+<strong>Delete any endpoints when you stop a container, or if a container crashes </strong>
+
+If a container stops and another starts before the first one is started again, they may switch IPs which would mean the created endpoint would lead to the second container.
+Some unresolved catches are that if you are hosting an endpoint and stop the container, the endpoint remains but leads to nothing. If you restart the container, there is no guarantee that it will have the same IP address, so there is a chance of undeleted endpoints leading to the wrong app.
 
 
 
