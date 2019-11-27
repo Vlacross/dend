@@ -93,7 +93,7 @@ which should drop us into a tty shell, where we can run:
 
         show dbs
 
-We should see RSVP amidst some other built in databases (admin, config, local)
+We should see RSVP amidst some other built in databases (admin, config, local) and can exit out of the container.
 
 If not, double check the database uri and ports to make sure everything is configured properly.
 
@@ -161,6 +161,7 @@ Example:
         http://ec2-169.254.169.254.us-west-2.compute.amazonaws.com/newpoint/
 
 Here we have a functioning app in a live environment to test and experiment with! 
+
 <strong>Delete any endpoints when you stop a container, or if a container crashes </strong>
 
 To delete an endpoint:
