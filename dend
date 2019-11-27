@@ -1,0 +1,134 @@
+#!/bin/bash
+
+while test $# -gt 0; do
+  case "$1" in
+    -h| --help)
+      echo " "
+      echo "Dend -Dauto Endpoint- a simple script written to ease in adding a project to your ec2 dev server."
+      echo " "
+      echo "dend [options]"
+      echo " "
+      echo "options:"
+      echo "-h, --help                Show a brief message"
+      echo "-a, --add                 Add a new endpoint"
+      echo "-l, --list                List current projects/endpoints"
+      echo "-d, --delete              Remove endpoint"
+      echo " "
+      exit 0
+      ;;
+    -a| --add)
+      echo "Enter new endpoint name:"
+      read PN
+      if [[ -z "$PN" ]]; then
+        echo "Invalid Entry"
+        exit 1
+      else
+        echo "You entered $PN"
+      fi
+      echo "Enter the container name or ID of the new endpoint"
+      read CID
+      if [[ -z "$CID" ]]; then
+        echo "Invalid Entry"
+        exit 1
+      else
+        echo "You entered $CID"
+        IP=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $CID)
+        if [ ${#IP} -lt 9 ]; then
+                echo "Error obtaining IP on specified container"
+                exit 1
+        else
+                echo "IP is $IP"
+        fi
+        PORT=$(docker port $CID | awk 'BEGIN { FS=":" } END {print $2}')
+        if [ ${#PORT} -le 1 ]; then
+                echo "Error obtaining port on specified container"
+                exit 1
+        else
+                echo "Port is $PORT"
+        fi
+        docker exec -t worldly bash -c 'if [ $(ls -al /etc/apache2/sites-enabled | grep 000-default | wc -l) -gt 0 ]; 
+then a2dissite 000-default.conf; fi'
+        docker exec -t worldly bash -c "cat > /etc/apache2/sites-available/$PN.conf << \"EOF\"
+        <VirtualHost *:80> 
+
+        ServerName localhost 
+        ServerAdmin bondo.baggins 
+
+        <Proxy *> 
+        Order deny,allow 
+        Allow from all 
+        </Proxy>  
+        ProxyPass /$PN http://$IP:$PORT 
+        ProxyPassReverse /$PN http://$IP:$PORT 
+        </VirtualHost>
+EOF
+        "
+        docker exec -t worldly bash -c "a2ensite $PN.conf && service apache2 reload"
+        cat > /home/$USER/dauto_endpoint/$PN"__vh" << LOF
+        name=$PN
+        container=$CID
+        port=$PORT
+LOF
+      fi
+      exit 0
+      ;;
+
+    -d| --delete)
+      echo " "
+      echo "Enter endpoint to remove:"
+      echo " "
+      read DP
+      if [[ -z "$DP" ]]; then
+              echo "Invalid entry."
+              exit 1
+      elif [ $(ls -al /home/$USER/dauto_endpoint | grep -w $DP"__vh" | wc -l) -lt 1 ]; then
+              echo "Couldn't find endpoint by that name."
+              echo "try dend --list to check spelling."
+              exit 1
+      elif [ $(ls -al /home/$USER/dauto_endpoint | grep $DP | wc -l) -gt 1 ]; then
+              echo "Found more than one match for that name."
+              echo "Please specify exact name:"
+              echo "$(ls -al | grep $DP | awk '{$1=$2=$3=$4=$5=$6=$7=$8=""; print $0}')"
+              exit 1
+      else
+              echo "removing $DP, are you sure? [y/n]"
+              read del_check
+              if [[ -z "$del_check" ]]; then
+                      echo "Invalid entry"
+                      exit 1
+              elif [ $del_check == "y" ] || [ $del_check == "Y" ]; then
+                      echo "removing $DP"
+                      docker exec -t worldly bash -c "a2dissite $DP && service apache2 reload"
+                      docker exec -t worldly bash -c "rm /etc/apache2/sites-available/$DP.conf"
+                      rm /home/$USER/dauto_endpoint/$DP"__vh"
+                      echo "removal complete"
+                      exit 0
+              elif [ $del_check == "n" ] || [ $del_check == "N" ]; then
+                      echo "canceling"
+                      exit 0
+              else
+                      echo "Invalid entry"
+                      exit 1
+              fi
+      fi
+      exit 0
+      ;;
+    -l| --list)
+      echo " "
+      ls -al /home/$USER/dauto_endpoint | awk '{ if (substr($9, length($9)-3, length($9)) == "__vh") {print substr($9, 1, length($9)-4)} }'
+      exit 0
+      ;;
+
+    *)
+      echo "Unrecognized entry"
+      break
+      ;;
+
+  esac
+done
+
+if [ $# -eq 0 ]; then
+  echo "Not enough arguments."
+  echo "For help, try dend --help"
+  exit 1
+fi
