@@ -141,7 +141,7 @@ Since are going to be forwarding traffic between containers, we need to move our
 
 To add an endpoint to your ec2 site enter:
 
-        dend -a
+        dend --add
 
 which will prompt you to enter a name for your new endpoint. For example purposed, lets say we enter <strong>newpoint</strong> 
 
@@ -158,6 +158,23 @@ To test you can visit your ec2 in a browser with your chosen endpoint.
 
 Here we have a functioning app in a live environment to test and experiment with! 
 <strong>Delete any endpoints when you stop a container, or if a container crashes </strong>
+
+To delete an endpoint:
+
+        dend --delete
+
+You will be prompted for the endpoint name. if you can't remember the spelling, use:
+
+        dend --list
+
+to show current endpoints.
+
+
+<h4 style="text-decoration: underline;">Edgecase - troubleshoot</h4>
+When you add an endpoint, dend creates a file in the dauto_endpoint folder. It uses these to recognize current endpoints. If you delete one on accident, you will have to manually disable the endpoint and add it again.
+
+Log into you
+
 
 If a container stops and another starts before the first one is started again, they may switch IPs which would mean the created endpoint would lead to the second container.
 Some unresolved catches are that if you are hosting an endpoint and stop the container, the endpoint remains but leads to nothing. If you restart the container, there is no guarantee that it will have the same IP address, so there is a chance of undeleted endpoints leading to the wrong app.
